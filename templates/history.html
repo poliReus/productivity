@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Storico Giornaliero</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6 text-center">📖 Storico dei Riepiloghi</h1>
+
+    <div class="mb-6 text-center text-lg space-y-2">
+      <p>📈 Media valutazioni LLM: <span class="font-bold text-green-600">{{ average }}</span>/10</p>
+      <p>🧍‍♂️ Media valutazioni personali: <span class="font-bold text-amber-600">{{ average_personal }}</span>/10</p>
+    </div>
+
+
+    <div class="space-y-6">
+      {% for item in summaries %}
+      <div class="bg-white rounded-xl shadow p-6 border border-gray-200">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-xl font-semibold">🗓️ {{ item.date }}</h2>
+        </div>
+        <p class="text-gray-700 whitespace-pre-line">{{ item.summary }}</p>
+      </div>
+        {% if item.personal_score %}
+          <div class="mt-2 text-sm text-amber-600 font-semibold">Valutazione personale: {{item.personal_score}}/10</div>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+
+    <div class="mt-8 text-center">
+      <a href="/" class="text-blue-600 hover:underline text-lg font-medium">⬅️ Torna alla Home</a>
+    </div>
+  </div>
+</body>
+</html>

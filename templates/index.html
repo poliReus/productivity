@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Tracker Giornaliero</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6 text-center">📅 Giornata: {{ today }}</h1>
+
+    <!-- Tasks Section -->
+    <div class="bg-white rounded-2xl shadow p-6 mb-10">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-600">📝 Le tue task di oggi</h2>
+      <ul id="task-list" class="space-y-2">
+        {% for task in tasks %}
+        <li data-id="{{ task.id }}"
+            class="flex justify-between items-center px-4 py-2 rounded-lg border {{ 'bg-green-100 line-through text-gray-500' if task.completed else 'bg-gray-50' }}">
+          <span>{{ task.task }}</span>
+          <div class="space-x-2">
+            <button class="complete-btn bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded shadow">✓</button>
+            <button class="delete-btn bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded shadow">✗</button>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="mt-4 flex gap-2">
+        <input type="text" id="new-task-input"
+               class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+               placeholder="Aggiungi una task...">
+        <button id="add-task-btn"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow">➕</button>
+      </div>
+    </div>
+
+    <!-- Questionario in stile "Promesse" -->
+    <div class="bg-white rounded-2xl shadow p-6 mb-6">
+      <h2 class="text-2xl font-semibold mb-6 text-indigo-600 text-center">🌙 Hai seguito queste promesse oggi?</h2>
+      <form action="/submit_questionnaire" method="POST" class="space-y-6">
+
+        {% for q in questions %}
+        <div class="promessa border-b pb-4">
+          <p class="mb-2">
+            <strong class="text-gray-800">{{ q["Promessa"] }}</strong><br>
+            <em class="text-sm text-gray-500">{{ q["Significato profondo"] }}</em><br>
+            <small class="text-gray-400 font-medium">🕒 Quando: {{ q["Quando"] }}</small>
+          </p>
+          <div class="flex gap-6 mt-2">
+            <label class="inline-flex items-center">
+              <input type="radio" name="{{ q['ID'] }}" value="True" required class="accent-green-500 w-5 h-5">
+              <span class="ml-2 text-green-600 font-semibold text-xl">🟩</span>
+            </label>
+            <label class="inline-flex items-center">
+              <input type="radio" name="{{ q['ID'] }}" value="False" required class="accent-red-500 w-5 h-5">
+              <span class="ml-2 text-red-600 font-semibold text-xl">🟥</span>
+            </label>
+          </div>
+        </div>
+        {% endfor %}
+
+        <div class="mt-8 text-center">
+          <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg shadow text-lg">
+            Salva le risposte
+          </button>
+        </div>
+      </form>
+    </div>
+
+
+    <!-- Punteggio personale -->
+    <div class="bg-white rounded-2xl shadow p-6 mb-6">
+      <h2 class="text-2xl font-semibold mb-4 text-amber-600">🎯 Valutazione personale della giornata</h2>
+      <form action="/submit_personal_score" method="POST" class="flex items-center gap-4">
+        <label for="personal_score" class="text-gray-700 font-medium">Da 1 a 10:</label>
+        <input type="number" id="personal_score" name="personal_score" min="1" max="10" required
+               class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400">
+        <button type="submit"
+                class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg shadow">Salva</button>
+      </form>
+    </div>
+  <!-- Bottoni extra -->
+    <div class="mt-8 flex justify-center gap-4">
+      <form action="/genera_analisi_ora" method="POST">
+        <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow">
+          ✨ Genera Analisi Ora
+        </button>
+      </form>
+
+      <a href="/history"
+         class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg shadow flex items-center justify-center">
+        📊 Vai alla Cronologia
+      </a>
+    </div>
+
+  </div>
+
+  <script>
+    document.getElementById("add-task-btn").addEventListener("click", async () => {
+      const input = document.getElementById("new-task-input");
+      const task = input.value.trim();
+      if (task) {
+        await fetch("/add_task", {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task })
+        });
+        location.reload();
+      }
+    });
+
+    document.querySelectorAll(".complete-btn").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.closest("li").dataset.id;
+        await fetch(`/complete_task/${id}`, { method: "POST" });
+        location.reload();
+      });
+    });
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        const id = e.target.closest("li").dataset.id;
+        await fetch(`/delete_task/${id}`, { method: "POST" });
+        location.reload();
+      });
+    });
+  </script>
+</body>
+</html>
