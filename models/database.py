@@ -12,6 +12,17 @@ def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
+    # Sessioni di studio
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS studio (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            duration INTEGER NOT NULL
+        )
+    ''')
+
     # Tasks giornaliere
     c.execute('''
             CREATE TABLE IF NOT EXISTS tasks (
@@ -92,6 +103,9 @@ def save_questionnaire(answers):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
+    # Elimina risposte esistenti per oggi
+    c.execute("DELETE FROM questionnaire WHERE date = ?", (today,))
+
     for qid, val in answers.items():
         domanda = id_to_domanda.get(qid, qid)
         c.execute("INSERT INTO questionnaire (question, answer, date) VALUES (?, ?, ?)",
@@ -167,4 +181,39 @@ def get_questionnaire_answers_for_today():
     results = c.fetchall()
     conn.close()
     return {q: a for q, a in results}
+def add_study_session(title, description, duration):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''
+        INSERT INTO studio (date, title, description, duration)
+        VALUES (?, ?, ?, ?)
+    ''', (get_today(), title, description, duration))
+    conn.commit()
+    conn.close()
+
+def get_study_sessions_for_today():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''
+        SELECT title, description, duration FROM studio
+        WHERE date = ?
+    ''', (get_today(),))
+    results = c.fetchall()
+    conn.close()
+    return results
+
+def get_study_sessions_by_date(date):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT title, description, duration FROM studio WHERE date = ?", (date,))
+    results = c.fetchall()
+    conn.close()
+    return results
+
+def delete_tasks_for_today():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("DELETE FROM tasks WHERE date = ?", (get_today(),))
+    conn.commit()
+    conn.close()
 

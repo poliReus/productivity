@@ -1,15 +1,17 @@
 from llama_cpp import Llama
-from models.database import get_questionnaire_answers_for_today
-from datetime import datetime
+from models.database import get_questionnaire_answers_for_today, get_study_sessions_by_date, get_questionnaire_questions
+
+import pandas
 import os
 import re
 
+
+
 def estrai_punteggio(text):
-    # Cerca un numero tra 1 e 10 vicino a "valutazione", "punteggio", ecc.
     patterns = [
         r"valutazione[:\s]*([1-9]|10)",
         r"punteggio[:\s]*([1-9]|10)",
-        r"\b([1-9]|10)[/ su]{1,3}10\b",     # es. 8/10, 8 su 10
+        r"\b([1-9]|10)[/ su]{1,3}10\b",
         r"ti do un[:\s]*([1-9]|10)",
         r"\bmeriti un[:\s]*([1-9]|10)"
     ]
@@ -19,43 +21,73 @@ def estrai_punteggio(text):
         if match:
             return int(match.group(1))
 
-    return None  # Se non trova nulla
+    return None
 
-# Configura percorso modello e tokenizer (modifica se necessario)
+
 MODEL_PATH = "/Users/reus3111/Desktop/productivity/llm_models/Nous-Hermes-2-Mistral-7B-DPO.Q5_K_M.gguf"
 
-# Inizializza il modello (solo una volta, fuori dalla funzione)
 llm = Llama(
     model_path=MODEL_PATH,
     n_ctx=1024,
     verbose=True
 )
 
+
+def format_questionnaire_with_questions():
+    raw_answers = get_questionnaire_answers_for_today()  # {ID: risposta}
+    all_questions = get_questionnaire_questions()        # [{'ID': '1', 'Promessa': '...'}, ...]
+
+    if not raw_answers:
+        return "Nessuna risposta al questionario."
+
+    id_to_question = {str(q["ID"]): q["Promessa"] for q in all_questions}
+
+    formatted = "\n".join([
+        f"- {id_to_question.get(str(qid), f'Domanda {qid}')}:" +
+        f" {'✅ Sì' if val == 'True' else '❌ No'}"
+        for qid, val in raw_answers.items()
+    ])
+    return formatted
+
+
+def format_study_sessions(date):
+    sessions = get_study_sessions_by_date(date)
+    if not sessions:
+        return "Nessuna sessione registrata."
+
+    formatted = "\n".join([
+        f"- {title} ({duration} min): {description}"
+        for title, description, duration in sessions
+    ])
+    return formatted
+
+
 def generate_summary_and_score(date, tasks):
-    # Prepara sezioni del prompt
     completed = [t["task"] for t in tasks if t["completed"]]
     not_completed = [t["task"] for t in tasks if not t["completed"]]
 
-    questionnaire = get_questionnaire_answers_for_today()
-    q_section = "\n".join([f"- {q}: {'Sì' if a == 'True' else 'No'}" for q, a in questionnaire.items()])
+    q_section = format_questionnaire_with_questions()
+    studio_section = format_study_sessions(date)
 
-    # Prompt da inviare al modello
     prompt = f"""
-Oggi è il giorno {date}.
+📅 Oggi è il giorno {date}.
 
- Task completate:
+✅ Task completate:
 {chr(10).join(f"- {t}" for t in completed) if completed else "Nessuna"}
 
- Task non completate:
+❌ Task non completate:
 {chr(10).join(f"- {t}" for t in not_completed) if not_completed else "Nessuna"}
 
-📋 Risposte al questionario (sì/no):
-{q_section if q_section else "Nessuna risposta"}
+📋 Questionario (Domanda + Risposta):
+{q_section}
+
+📚 Sessioni di studio:
+{studio_section}
 
 🔎 Obiettivo:
-Scrivi un riepilogo motivazionale della giornata, tenendo conto delle task e delle risposte al questionario.
-Le risposte al questionario sono importanti tanto quanto le task.
-Includi anche una valutazione da 1 a 10 della giornata, come commento discorsivo e infine scrivendo un punteggio nel formato Punteggio:x/10
+Scrivi un riepilogo motivazionale della giornata, tenendo conto di tutte le informazioni: task, risposte al questionario, sessioni di studio.
+Le risposte al questionario e lo studio sono importanti tanto quanto le task.
+Includi anche una valutazione da 1 a 10 della giornata, come commento discorsivo e infine scrivendo un punteggio nel formato Punteggio:x/10.
 Rispondi in modo naturale, empatico e ispirante.
 """.strip()
 
@@ -65,7 +97,6 @@ Rispondi in modo naturale, empatico e ispirante.
         output = llm(prompt, max_tokens=512)
         response_text = output["choices"][0]["text"].strip()
 
-        # Salva il testo generato in un file
         os.makedirs("data", exist_ok=True)
         filename = f"data/riepilogo_{date}.txt"
         with open(filename, "w", encoding="utf-8") as f:

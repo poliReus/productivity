@@ -14,21 +14,50 @@
       <p>🧍‍♂️ Media valutazioni personali: <span class="font-bold text-amber-600">{{ average_personal }}</span>/10</p>
     </div>
 
-
-    <div class="space-y-6">
-      {% for item in summaries %}
-      <div class="bg-white rounded-xl shadow p-6 border border-gray-200">
-        <div class="flex justify-between items-center mb-2">
-          <h2 class="text-xl font-semibold">🗓️ {{ item.date }}</h2>
-        </div>
-        <p class="text-gray-700 whitespace-pre-line">{{ item.summary }}</p>
-      </div>
-        {% if item.personal_score %}
-          <div class="mt-2 text-sm text-amber-600 font-semibold">Valutazione personale: {{item.personal_score}}/10</div>
-        {% endif %}
-      {% endfor %}
+    <!-- 🔍 Filtro per data -->
+    <div class="text-center mb-6">
+      <form>
+        <select name="date" onchange="if(this.value) window.location.href='/history/' + this.value"
+                class="border border-gray-300 p-2 rounded text-lg">
+          <option disabled selected>📅 Seleziona una data</option>
+          {% for s in summaries %}
+            <option value="{{ s.date }}" {% if s.date == selected_date %}selected{% endif %}>
+              {{ s.date }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
     </div>
 
+    {% if selected_summary %}
+      <div class="bg-white rounded-xl shadow p-6 border border-gray-200 mb-4">
+        <h2 class="text-xl font-semibold mb-2">🗓️ Riepilogo del {{ selected_summary.date }}</h2>
+        <p class="whitespace-pre-line">{{ selected_summary.summary }}</p>
+
+        {% if selected_summary.personal_score %}
+          <div class="mt-4 text-sm text-amber-600 font-semibold">
+            Valutazione personale: {{ selected_summary.personal_score }}/10
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- 📚 Sessioni di studio -->
+      <div class="bg-white rounded-xl shadow p-6 border border-gray-200">
+        <h3 class="text-lg font-semibold mb-2">📚 Sessioni di Studio</h3>
+        {% if selected_sessions %}
+          <ul class="list-disc list-inside space-y-2">
+            {% for s in selected_sessions %}
+              <li>
+                <strong>{{ s[0] }}</strong> – {{ s[2] }} minuti<br>
+                <span class="text-sm text-gray-600 italic">{{ s[1] }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-gray-500">Nessuna sessione registrata per questo giorno.</p>
+        {% endif %}
+      </div>
+    {% endif %}
 
     <div class="mt-8 text-center">
       <a href="/" class="text-blue-600 hover:underline text-lg font-medium">⬅️ Torna alla Home</a>

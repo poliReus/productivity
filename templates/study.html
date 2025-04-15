@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Sessioni di Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+  <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-md">
+    <h1 class="text-2xl font-bold mb-4">📚 Aggiungi una sessione di studio</h1>
+
+    <div class="flex items-center space-x-4 mb-4">
+      <div id="timer" class="text-2xl font-mono">00:00:00</div>
+      <button onclick="startTimer()" class="bg-green-500 text-white px-3 py-1 rounded">▶️ Avvia</button>
+      <button onclick="pauseTimer()" class="bg-yellow-500 text-white px-3 py-1 rounded">⏸️ Pausa</button>
+      <button onclick="stopTimer()" class="bg-red-500 text-white px-3 py-1 rounded">⏹️ Stop</button>
+    </div>
+
+    <form method="POST" class="space-y-4">
+      <input type="text" name="title" placeholder="Titolo" required class="w-full border rounded p-2">
+      <textarea name="description" placeholder="Descrizione" required class="w-full border rounded p-2"></textarea>
+      <input type="number" name="duration" id="duration" placeholder="Durata in minuti" required class="w-full border rounded p-2">
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">💾 Salva</button>
+    </form>
+
+    <h2 class="text-xl font-semibold mt-8 mb-2">📅 Sessioni di oggi</h2>
+    {% if sessions %}
+      <ul class="divide-y divide-gray-200">
+        {% for s in sessions %}
+          <li class="py-2">
+            <strong>{{ s[0] }}</strong> – {{ s[2] }} min<br>
+            <span class="text-gray-600 italic">{{ s[1] }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-gray-500">Nessuna sessione registrata oggi.</p>
+    {% endif %}
+  </div>
+
+  <script>
+    let timer, seconds = 0;
+    function updateTimerDisplay() {
+      const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
+      const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+      const secs = String(seconds % 60).padStart(2, '0');
+      document.getElementById('timer').textContent = `${hrs}:${mins}:${secs}`;
+    }
+    function startTimer() {
+      if (!timer) {
+        timer = setInterval(() => { seconds++; updateTimerDisplay(); }, 1000);
+      }
+    }
+    function pauseTimer() {
+      clearInterval(timer);
+      timer = null;
+    }
+    function stopTimer() {
+      pauseTimer();
+      document.getElementById('duration').value = Math.floor(seconds / 60);
+    }
+  </script>
+</body>
+</html>
