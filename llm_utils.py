@@ -24,7 +24,7 @@ def estrai_punteggio(text):
     return None
 
 
-MODEL_PATH = "/Users/reus3111/Desktop/productivity/llm_models/Nous-Hermes-2-Mistral-7B-DPO.Q5_K_M.gguf"
+MODEL_PATH = "llm_models/Nous-Hermes-2-Mistral-7B-DPO.Q8_0.gguf"
 
 llm = Llama(
     model_path=MODEL_PATH,

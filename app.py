@@ -134,4 +134,4 @@ def history_by_date(selected_date):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0",port=17000,debug=True)
