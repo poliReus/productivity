@@ -1,15 +1,29 @@
 import sqlite3
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, abort
 from datetime import datetime, timedelta
 import os
 from models.database import init_db, add_task, get_tasks_for_today, complete_task, delete_task, \
     save_questionnaire, save_day_summary, get_all_summaries, get_average_score, get_average_personal_score, \
     get_questionnaire_questions, DB_PATH, add_study_session, get_study_sessions_for_today,  get_study_sessions_by_date, delete_tasks_for_today, get_questionnaire_answers_for_today
 from llm_utils import generate_summary_and_score
-
+import geoip2.database
 app = Flask(__name__)
 init_db()
+
+reader = geoip2.database.Reader('GeoLite2-Country.mmdb')
+
+@app.before_request
+def limit_country():
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    try:
+        response = reader.country(ip_address)
+        country = response.country.iso_code
+        if country != 'IT':
+            abort(403)  # Forbidden
+    except geoip2.errors.AddressNotFoundError:
+        abort(403)
+
 
 @app.route('/')
 def index():
